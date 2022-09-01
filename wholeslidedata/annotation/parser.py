@@ -193,10 +193,7 @@ class QuPathAnnotationParser(AnnotationParser):
             set(
                 [
                     Label.create(
-                        annotation["properties"]["classification"]["name"],
-                        idx=seg_labels[
-                            annotation["properties"]["classification"]["name"]
-                        ],
+                        annotation["properties"]["classification"]["name"]
                     )
                     for annotation in opened_annotation
                 ]
