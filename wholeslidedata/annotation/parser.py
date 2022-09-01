@@ -185,6 +185,68 @@ class WholeSlideAnnotationParser(AnnotationParser):
             yield annotation
 
 
+@AnnotationParser.register(("qupath",))
+class QuPathAnnotationParser(AnnotationParser):
+    @staticmethod
+    def get_available_labels(opened_annotation: dict):
+        return Labels.create(
+            set(
+                [
+                    Label.create(
+                        annotation["properties"]["classification"]["name"],
+                        idx=seg_labels[
+                            annotation["properties"]["classification"]["name"]
+                        ],
+                    )
+                    for annotation in opened_annotation
+                ]
+            )
+        )
+
+    def _parse(self, path) -> List[dict]:
+        with open(path) as json_file:
+            data = json.load(json_file)
+        labels = self._get_labels(data)
+        for annotation in data:
+            label_name = annotation["properties"]["classification"]["name"].lower()
+            if label_name not in labels.names:
+                continue
+            label = labels.get_label_by_name(label_name)
+
+            if "label" not in annotation:
+                annotation["label"] = dict()
+
+            for key, value in label.todict().items():
+                if key not in annotation["label"] or annotation["label"][key] is None:
+                    annotation["label"][key] = value
+
+            yield annotation
+
+    def parse(self, path) -> List[Annotation]:
+
+        if not self._path_exists(path):
+            raise FileNotFoundError(path)
+
+        if self._empty_file(path):
+            warn = f"Loading empty file: {path}"
+            warnings.warn(warn)
+            return []
+
+        annotations = []
+        for index, annotation in enumerate(self._parse(path)):
+            annotation["index"] = index
+            annotation["type"] = annotation["geometry"]["type"].lower()
+            annotation["coordinates"] = np.array(annotation["geometry"]["coordinates"]).squeeze()
+            annotation["label"] = self._rename_label(annotation["label"])
+            del annotation["properties"]
+            del annotation["geometry"]
+            annotations.append(Annotation.create(**annotation))
+
+        for hook in self._hooks:
+            annotations = hook(annotations)
+        return annotations
+
+
 @AnnotationParser.register(("mask",))
 class MaskAnnotationParser(AnnotationParser):
     def __init__(

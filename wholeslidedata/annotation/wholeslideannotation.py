@@ -8,6 +8,7 @@ from wholeslidedata.extensions import (
     ExtensibleMarkupLanguage,
     JavaScriptObjectNotation,
     TaggedImageFileExtension,
+    QuPathGeoJsonExtension,
     WholeSlideAnnotationExtension,
 )
 from wholeslidedata.labels import Labels
@@ -24,6 +25,7 @@ DEFAULT_PARSERS = {
     JavaScriptObjectNotation: "wsa",
     ExtensibleMarkupLanguage: "asap",
     TaggedImageFileExtension: "mask",
+    QuPathGeoJsonExtension: "qupath"
 }
 
 

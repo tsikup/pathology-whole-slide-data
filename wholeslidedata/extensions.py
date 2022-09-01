@@ -38,6 +38,10 @@ class ExtensibleMarkupLanguage(WholeSlideAnnotationExtension):
 class JavaScriptObjectNotation(WholeSlideAnnotationExtension):
     ...
 
+@WholeSlideAnnotationExtension.register((".geojson",))
+class QuPathGeoJsonExtension(WholeSlideAnnotationExtension):
+    ...
+
 @WholeSlideAnnotationExtension.register((".tif",))
 class TaggedImageFileExtension(WholeSlideAnnotationExtension):
     ...
