@@ -192,8 +192,9 @@ class QuPathAnnotationParser(AnnotationParser):
         return Labels.create(
             set(
                 [
+                    # Label is rgbint (see https://stackoverflow.com/questions/2262100/rgb-int-to-rgb-python)
                     Label.create(
-                        annotation["properties"]["classification"]["name"]
+                        annotation["properties"]["classification"]["name"], annotation["properties"]["classification"]["colorRGB"]
                     )
                     for annotation in opened_annotation
                 ]
@@ -233,7 +234,9 @@ class QuPathAnnotationParser(AnnotationParser):
         for index, annotation in enumerate(self._parse(path)):
             annotation["index"] = index
             annotation["type"] = annotation["geometry"]["type"].lower()
-            annotation["coordinates"] = np.array(annotation["geometry"]["coordinates"]).squeeze()
+            # TODO: Implement multipolygon
+            assert annotation["type"] == "polygon", "Annotation type should be polygon. Multipolygon is not yet implemented."
+            annotation["coordinates"] = np.array(annotation["geometry"]["coordinates"][0])
             annotation["label"] = self._rename_label(annotation["label"])
             del annotation["properties"]
             del annotation["geometry"]
