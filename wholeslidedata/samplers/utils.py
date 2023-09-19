@@ -87,6 +87,28 @@ def normalize(input_):
     return _type(np.array(input_) / 255.0)
 
 
+def crop_data(data, output_shape):
+
+    if (data.shape[0] == output_shape[0]) and (data.shape[1] == output_shape[1]):
+        return data
+
+    cropx = (data.shape[0] - output_shape[0]) // 2
+    cropy = (data.shape[1] - output_shape[1]) // 2
+
+    if len(data.shape) == 2:
+        return data[cropx:-cropx, cropy:-cropy]
+    if len(data.shape) == 3:
+        return data[cropx:-cropx, cropy:-cropy, :]
+    if len(data.shape) == 4:
+        cropx = (data.shape[1] - output_shape[0]) // 2
+        cropy = (data.shape[2] - output_shape[1]) // 2
+        return data[:, cropx:-cropx, cropy:-cropy, :]
+    if len(data.shape) == 5:
+        cropx = (data.shape[2] - output_shape[0]) // 2
+        cropy = (data.shape[3] - output_shape[1]) // 2
+        return data[:, :, cropx:-cropx, cropy:-cropy, :]
+
+
 def fit_data(data, output_shape):
 
     if (data.shape[0] == output_shape[0]) and (data.shape[1] == output_shape[1]):
