@@ -1,0 +1,117 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "275b29fc",
+   "metadata": {},
+   "source": [
+    "<!-- wholeslidedata:\n",
+    "    default:\n",
+    "        yaml_source:\n",
+    "            training:\n",
+    "                - wsi: \n",
+    "                    path: /tmp/TCGA-21-5784-01Z-00-DX1.tif\n",
+    "                  wsa: \n",
+    "                    path: /tmp/TCGA-21-5784-01Z-00-DX1.xml       \n",
+    "\n",
+    "        image_backed: asap\n",
+    "        labels:\n",
+    "            stroma: 1\n",
+    "            tumor: 2\n",
+    "            lymphocytes: 3\n",
+    "            \n",
+    "        batch_shape:\n",
+    "            batch_size: 10\n",
+    "            spacing: 1.0\n",
+    "            shape: [1024, 1024, 3]\n",
+    " -->"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "id": "d46d80eb-8f4f-4d6d-9e63-9bb306d6ade3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from timeit import timeit\n",
+    "\n",
+    "from wholeslidedata.iterators import create_patch_iterator, PatchConfiguration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "id": "e801c9f4-7959-48d2-b3dd-21c12bf03ad7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def run(cpus):\n",
+    "    \n",
+    "    image_path = '/tmp/TCGA-21-5784-01Z-00-DX1.tif'\n",
+    "    mask_path = '/tmp/TCGA-21-5784-01Z-00-DX1_tb_mask.tif'\n",
+    "    patch_configuration = PatchConfiguration()\n",
+    "    \n",
+    "    with create_patch_iterator(image_path=image_path, \n",
+    "                               mask_path=mask_path, \n",
+    "                               patch_configuration=patch_configuration, \n",
+    "                               cpus=cpus) as patch_iterator:\n",
+    "    \n",
+    "        for _ in patch_iterator: \n",
+    "            pass"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "id": "8659c1cf-0740-47ea-88e0-061d9f9ac9b5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "time with 1 cpus = 12.589808709002682\n",
+      "time with 2 cpus = 8.457286353994277\n",
+      "time with 4 cpus = 6.162545195504208\n",
+      "time with 8 cpus = 5.762532652493974\n"
+     ]
+    }
+   ],
+   "source": [
+    "powers = 4\n",
+    "for cpus in (2**p for p in range(0, powers)):\n",
+    "    print(f\"time with {cpus} cpus = {timeit(lambda: run(cpus), number=2)/2}\") "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "fc1d8067-79b7-4989-a244-d677c99c0f1c",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
