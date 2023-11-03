@@ -1,6 +1,7 @@
 import json
 from typing import List
 
+from shapely import Polygon
 from wholeslidedata.annotation.labels import Label, Labels
 from wholeslidedata.annotation.parser import AnnotationParser
 
@@ -77,6 +78,13 @@ class QuPathAnnotationParser(AnnotationParser):
                                 "holes": coordinates[1:],
                             },
                         }
+            elif geom_type == "linestring":
+                # Hack to convert open line to polygon as some annotations are not closed for some reason.
+                # Need to check the cause and fix it properly.
+                _coords = list(Polygon(_coords).exterior.coords)
+                # Treat as polygon
+                ann["coordinates"] = _coords[0]
+                yield ann
             else:
                 raise ValueError(
                     f"Annotation type {geom_type} is not supported yet."
