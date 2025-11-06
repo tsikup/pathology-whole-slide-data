@@ -58,11 +58,37 @@ class WholeSlideImageWriterBase(Writer, MultiResolutionImageWriter):
         Writer.__init__(self, callbacks)
         MultiResolutionImageWriter.__init__(self)
 
+    def _tile_and_coordinate_checks_and_corrections(self, tile, coordinates):
+        if tile.shape != self._tile_shape:
+            raise TileShapeError(
+                f"Tile shape {tile.shape} does not match expected shape {self._tile_shape}"
+            )
+        if len(tile.shape) != 2 and len(tile.shape) != 3:
+            raise TileShapeError(
+                f"Invalid tile shape provided: {tile.shape}, tile shape should contain at 2 or 3 dimensions"
+            )
+        if len(self._tile_shape) != 2 and len(self._tile_shape) != 3:
+            raise TileShapeError(
+                f"Invalid tile shape initialized: {self._tile_shape}, tile shape should contain at 2 or 3 dimensions"
+            )
+        if coordinates: 
+            x, y = coordinates
+            if x % self._tile_shape[0] != 0 or y % self._tile_shape[1] != 0:
+                raise CoordinateError(
+                    f"Coordinates {coordinates} are not multiples of the tile size {self._tile_shape[:2]}"
+                )
+            if x >= self._dimensions[0] or y >= self._dimensions[1]:
+                print(f"Tile's upper left coordinates {coordinates} are completely outside the dimensions {self._dimensions}... Skipping tile...")
+                return None
+        return tile
+
     def write_tile(self, tile, coordinates=None, mask=None):
         tile = self._apply_tile_callbacks(tile)
         tile = self._mask_tile(tile, mask)
         tile = self._crop_tile(tile)
-        self._write_tile_to_image(tile, coordinates)
+        tile = self._tile_and_coordinate_checks_and_corrections(tile, coordinates)
+        if tile is not None:
+            self._write_tile_to_image(tile, coordinates)
 
     def _write_tile_to_image(self, tile, coordinates):
         if coordinates:
@@ -134,6 +160,55 @@ class WholeSlideMonochromeMaskWriter(WholeSlideImageWriterBase):
             self.setDataType(mir.UChar)
             self.setInterpolation(mir.NearestNeighbor)
             self.setColorType(mir.Monochrome)
+
+        # set writing spacing
+        pixel_size_vec = mir.vector_double()
+        pixel_size_vec.push_back(self._spacing)
+        pixel_size_vec.push_back(self._spacing)
+        self.setSpacing(pixel_size_vec)
+        self.writeImageInformation(self._dimensions[0], self._dimensions[1])
+
+class WholeSlideIndexedMaskWriter(WholeSlideImageWriterBase):
+    def __init__(self, suffix=".tif"):
+        super().__init__()
+        self._suffix = suffix
+
+    def _set_indexed_channels(self, dimensions):
+        if len(dimensions) > 2:
+            return len(dimensions)
+        elif len(dimensions) == 2:
+            return 1
+        else:
+            raise Exception("Invalid dimensions")
+
+    def write(self, path, spacing, dimensions, tile_shape):
+        self._path = str(path).replace(Path(path).suffix, self._suffix)
+        self._spacing = spacing
+        self._dimensions = dimensions
+        self._tile_shape = tile_shape
+        self._channels = self._set_indexed_channels(dimensions)
+
+        print(f"Creating: {self._path}....")
+        print(f"Spacing: {self._spacing}")
+        print(f"Dimensions: {self._dimensions}")
+        print(f"Tile_shape: {self._tile_shape}")
+        print(f"Indexed channels: {self._channels}")
+
+        self.openFile(self._path)
+        self.setTileSize(self._tile_shape[0])
+
+        try:
+            self.setCompression(mir.Compression_LZW)
+            self.setDataType(mir.DataType_UChar)
+            self.setInterpolation(mir.Interpolation_NearestNeighbor)
+            self.setColorType(mir.ColorType_Indexed)
+            self.setNumberOfIndexedColors(self._channels)
+        except:
+            self.setCompression(mir.LZW)
+            self.setDataType(mir.UChar)
+            self.setInterpolation(mir.NearestNeighbor)
+            self.setColorType(mir.Indexed)
+            self.setNumberOfIndexedColors(self._channels)
 
         # set writing spacing
         pixel_size_vec = mir.vector_double()

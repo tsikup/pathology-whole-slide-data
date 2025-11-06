@@ -143,7 +143,7 @@ class SegmentationPatchLabelSampler(PatchLabelSampler):
                 mask[holemask != -1] = holemask[holemask != -1]
 
             elif isinstance(annotation, PointAnnotation):
-                mask[int(coordinates[1]), int(coordinates[0])] = annotation.label.value
+                mask[int(coordinates[0][1]), int(coordinates[0][0])] = annotation.label.value
 
         return mask.astype(np.uint8)
 
@@ -232,10 +232,10 @@ class DetectionPatchLabelSampler(PatchLabelSampler):
         if self._point_box_sizes is not None:
             size = np.array(self._point_box_sizes[annotation.label.name])
 
-        x1 = int(max(0, coordinates[0] - (size // 2)))
-        y1 = int(max(0, coordinates[1] - (size // 2)))
-        x2 = int(min(width-1, coordinates[0] + (size // 2)))
-        y2 = int(min(height-1, coordinates[1] + (size // 2)))
+        x1 = int(max(0, coordinates[0][0] - (size // 2)))
+        y1 = int(max(0, coordinates[0][1] - (size // 2)))
+        x2 = int(min(width - 1, coordinates[0][0] + (size // 2)))
+        y2 = int(min(height - 1, coordinates[0][1] + (size // 2)))
         if x2 <= x1:
             return None
         if y2 <= y1:

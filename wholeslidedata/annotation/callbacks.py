@@ -3,11 +3,21 @@ from typing import List
 
 from wholeslidedata.annotation.types import Annotation
 from shapely import geometry
+from shapely.affinity import affine_transform
 
 class AnnotationCallback:
     def __call__(self, annotations: List[Annotation]):
         return annotations
 
+class OffsetAnnotationCallback(AnnotationCallback):
+    def __init__(self, x_offset: float, y_offset: float):
+        self._matrix = [1, 0, 0, 1, x_offset, y_offset]
+    
+    def __call__(self, annotations: List[Annotation]):
+        for annotation in annotations:
+            annotation._geometry = affine_transform(annotation.geometry, self._matrix)
+        return annotations
+    
 class ScalingAnnotationCallback(AnnotationCallback):
 
     def __init__(self, scaling):
@@ -45,7 +55,7 @@ class TiledAnnotationCallback(AnnotationCallback):
             for x in range(x1, x2, self._tile_size-self._overlap):
                 for y in range(y1, y2, self._tile_size-self._overlap):
                     box_poly = geometry.box(x, y, x+self._tile_size, y+self._tile_size)
-                    if not self._full_coverage or box_poly.within(annotation):
+                    if not self._full_coverage or box_poly.within(annotation.geometry):
                         new_annotations.append(Annotation.create(
                             index=index,
                             coordinates=box_poly.exterior.coords,
